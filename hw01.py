@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import re
+
+from matplotlib import pylab as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-from matplotlib import pylab as plt
-import seaborn as sns
-
+from sklearn.metrics import mean_squared_error, r2_score
 
 
 data = pd.read_csv(r"C:\Users\mkuzo\Desktop\Программирование_2 сем\mag2022\CL\term02\01-Intro, LinReg\Car details v3.csv")
@@ -15,6 +15,7 @@ print(data.size)
 print(data.shape)
 print(data.dtypes)
 print(data.dtypes.value_counts())
+print(data.info())
 
 #год year, цена selling_price и km_driven оставлю без изменений
 
@@ -22,21 +23,27 @@ print(data.dtypes.value_counts())
 #мне кажется, что тип топлива может влиять на цену, поэтому надо вывести все значения и посмотреть, какие они бывают, и попробовать рассклассифицировать их
 #print(data['fuel'].unique()) #четыре значения ('Diesel' 'Petrol' 'LPG' 'CNG')
 
-def map_fuel(fuel):
-    repl = dict(zip(['Diesel', 'Petrol', 'LPG', 'CNG'], range(4)))
-    return repl[fuel]
+#def map_fuel(fuel):
+    #repl = dict(zip(['Diesel', 'Petrol', 'LPG', 'CNG'], range(4)))
+    #return repl[fuel]
     
-data['fuel'] = data['fuel'].apply(map_fuel) #заменила тип топлива на цифры
+#data['fuel'] = data['fuel'].apply(map_fuel) #заменила тип топлива на цифры
+set(data.fuel)
+data = pd.get_dummies(data, columns=['fuel'], drop_first = True)
+#print(data) 
 
 #продавец, наверное, тоже важен, но под ? (мало ли, какую цену выставит обычный человек и чем он руководствуется, и какую комиссию накрутят себе салоны)
 #пока оставлю, потом подумаю
 #print(data['seller_type'].unique()) #'Individual' 'Dealer' 'Trustmark Dealer'
 
-def map_seller_type(seller_type):
-    repl = dict(zip(['Individual', 'Dealer', 'Trustmark Dealer'], range(3)))
-    return repl[seller_type]
+#def map_seller_type(seller_type):
+    #repl = dict(zip(['Individual', 'Dealer', 'Trustmark Dealer'], range(3)))
+    #return repl[seller_type]
     
-data['seller_type'] = data['seller_type'].apply(map_seller_type)
+#data['seller_type'] = data['seller_type'].apply(map_seller_type)
+set(data.seller_type)
+data = pd.get_dummies(data, columns=['seller_type'], drop_first = True)
+#print(data) 
 
 #transmission тоже может влиять на цену
 
@@ -46,11 +53,14 @@ data['transmission'] = data['transmission'].apply(lambda x: 0 if x == 'Manual' e
 #с владельцами тоже самое
 #print(data['owner'].unique()) #'First Owner' 'Second Owner' 'Third Owner' 'Fourth & Above Owner' 'Test Drive Car'
 
-def map_owner(owner):
-    repl = dict(zip(['First Owner', 'Second Owner', 'Third Owner', 'Fourth & Above Owner', 'Test Drive Car'], range(5)))
-    return repl[owner]
+#def map_owner(owner):
+    #repl = dict(zip(['First Owner', 'Second Owner', 'Third Owner', 'Fourth & Above Owner', 'Test Drive Car'], range(5)))
+    #return repl[owner]
     
-data['owner'] = data['owner'].apply(map_owner)
+#data['owner'] = data['owner'].apply(map_owner)
+set(data.owner)
+data = pd.get_dummies(data, columns=['owner'], drop_first = True)
+#print(data) 
 
 #если честно, я не очень поняла, что такое mileage, яндекс переводит как пробег, но у нас уже есть пробег как km_driven, а значения там какие-то странные
 data.drop(columns = 'mileage', axis = 1 , inplace = True)
@@ -93,14 +103,17 @@ data['name'] = data['name'].apply(lambda x: find_pattern(x, pattern))
 #теперь можно закодировать марки машин 
 #print(data['name'].unique()) 
 
-def map_name(name):
-    repl = dict(zip(['Maruti', 'Skoda', 'Honda', 'Hyundai', 'Toyota', 'Ford', 'Renault', 'Mahindra',
- 'Tata', 'Chevrolet', 'Fiat', 'Datsun', 'Jeep', 'Mercedes', 'Mitsubishi', 'Audi',
- 'Volkswagen', 'BMW', 'Nissan', 'Lexus', 'Jaguar', 'Land', 'MG', 'Volvo', 'Daewoo',
- 'Kia', 'Force', 'Ambassador', 'Ashok', 'Isuzu', 'Opel', 'Peugeot'], range(32)))
-    return repl[name]
+#def map_name(name):
+    #repl = dict(zip(['Maruti', 'Skoda', 'Honda', 'Hyundai', 'Toyota', 'Ford', 'Renault', 'Mahindra',
+ #'Tata', 'Chevrolet', 'Fiat', 'Datsun', 'Jeep', 'Mercedes', 'Mitsubishi', 'Audi',
+ #'Volkswagen', 'BMW', 'Nissan', 'Lexus', 'Jaguar', 'Land', 'MG', 'Volvo', 'Daewoo',
+ #'Kia', 'Force', 'Ambassador', 'Ashok', 'Isuzu', 'Opel', 'Peugeot'], range(32)))
+    #return repl[name]
 
-data['name'] = data['name'].apply(map_name)
+#data['name'] = data['name'].apply(map_name)
+set(data.name)
+data = pd.get_dummies(data, columns=['name'], drop_first = True)
+#print(data) 
 
 #как сейчас выглядит датасет после всех действий: 
 print(data.head())
@@ -134,7 +147,7 @@ print(mean_squared_error(pred_train, ytrain) ** 0.5)
 data_1 = pd.DataFrame(data=np.c_[data.drop(columns = 'selling_price', axis = 1), data['selling_price']],
                      columns=list(data.drop(columns = 'selling_price', axis = 1)) + ['selling_price'])
 
-plt.figure(figsize=(15,15))
+plt.figure(figsize=(200,200))
 
 corr = data_1.corr()
 
@@ -148,11 +161,22 @@ g.set_xticklabels(g.get_xticklabels(), fontsize = 7)
 g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 7)
 print(plt.show())
 
+sns.barplot(y='selling_price', x='year', data = data)
+plt.show()
 
-for c in data_1.columns:
-    if c != 'selling_price':
-        print(c)
-        plt.scatter(data_1[c], data_1['selling_price'],
-                    c = 'm',
-                    s = 3)
-        plt.show()
+#for c in data_1.columns:
+    #if c != 'selling_price':
+        #print(c)
+        #sns.barplot(y='selling_price', x=c, data = data)
+    #plt.show()
+
+#for c in data_1.columns:
+    #if c != 'selling_price':
+        #print(c)
+        #plt.scatter(data_1[c], data_1['selling_price'],
+                    #c = 'm',
+                    #s = 3)
+        #plt.show()
+
+print(r2_score(ytrain, pred_train))
+print(r2_score(ytest,pred_test))
