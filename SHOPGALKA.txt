@@ -1,0 +1,256 @@
+SHOPGALKA
+ИМПОРТЫ
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.linear_model import LinearRegression, LogisticRegression, LassoCV, Lasso, RidgeCV, Ridge, ElasticNet
+from sklearn.metrics import mean_squared_error, r2_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.svm import SVC
+
+
+ИНФОРМАЦИЯ О БД
+
+data = pd.read_csv(r"PATH")
+data.head() 
+data.size
+data.shape
+data.dtypes
+data.dtypes.value_counts()
+data.info()
+
+РАБОТА С ДАННЫМИ
+
+y.value_counts()
+
+missing_values = data.isnull().sum().sort_values(ascending = False)
+missing_values = missing_values[missing_values > 0]/data.shape[0]
+print(f'{missing_values *100} %')
+
+data['column'].unique()
+
+def map_column(column):
+    repl = dict(zip(['i1', 'i2', ..., 'in-1', 'in'], range(n)))
+    return repl[i]
+
+data['column'] = data['column'].apply(map_column)
+
+set(data.column)
+data = pd.get_dummies(data, columns=['column'], drop_first = True)
+
+data['column'] = data['column'].apply(lambda x: 0 if x == 'i' else 1)
+
+data.drop(columns = 'column', axis = 1 , inplace = True)
+
+data = data.fillna(0)
+data.dropna ()
+
+data['column'] = data['column'].astype('type')
+
+pattern = 'pattern'
+
+def find_pattern (str, pattern):
+    if re.search(pattern, str):
+        return re.search(pattern, str).group()
+
+data['column'] = data['column'].apply(lambda x: find_pattern(x, pattern))
+
+ОБУЧЕНИЕ
+
+X = data.drop(columns = 'target_column', axis = 1)
+y = data['target_column']
+
+Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size = 0.2)
+
+model = LinearRegression()
+
+model.fit(Xtrain, ytrain)
+
+pred_test = model.predict(Xtest) #предсказание
+mean_squared_error(pred_test, ytest) ** 0.5
+
+pred_train = model.predict(Xtrain)
+mean_squared_error(pred_train, ytrain) ** 0.5
+
+МАСШТАБИРОВАНИЕ
+
+scaler = StandardScaler().fit(Xtrain)
+Xtrain = scaler.transform(Xtrain)
+Xtest = scaler.transform(Xtest)
+
+regressor = LinearRegression()
+regressor.fit(Xtrain, ytrain)
+
+ypred_train = regressor.predict(Xtrain)
+ypred_test = regressor.predict(Xtest)
+print(ypred)
+
+r2_score(ytrain, ypred_train)
+r2_score(ytest, ypred_test)
+
+coefficients = pd.concat([pd.DataFrame(X.columns),pd.DataFrame(np.transpose(regressor.coef_))], axis = 1)
+coefficients
+
+plot(regressor.coef_)
+
+
+L1 РЕГУЛЯРИЗАЦИЯ, ЛАССО
+
+regressor2 = Lasso(alpha=10) 
+regressor2.fit(Xtrain, ytrain)
+
+ypred2 = regressor2.predict(Xtest)
+
+print('Scores:', r2_score(ytest,ypred2), mean_squared_error(ytest,ypred2))
+print(regressor2.coef_,'\n')
+
+for a in np.arange(0.1,100.1,25):
+    regressor2 = Lasso(alpha=a)
+    regressor2.fit(Xtrain, ytrain)
+
+    ypred2 = regressor2.predict(Xtest)
+
+    print('alpha={}'.format(a))
+    print('Scores:', r2_score(ytest,ypred2), mean_squared_error(ytest,ypred2))
+    print(regressor2.coef_,'\n')
+
+n_alphas = 200
+alphas = np.linspace(0.1, 10, n_alphas)
+
+lasso_cv = LassoCV(alphas=alphas, 
+                   cv=3, random_state=17)
+lasso_cv.fit(X, y)
+
+lasso_cv.coef_
+
+lasso_cv.alpha_
+
+КАЧЕСТВО ВАЛИДАЦИИ
+
+model = LinearRegression()
+cross_val_score(model, X, y, cv = 3, scoring = 'r2').mean()
+
+regressor2 = Lasso(alpha=lasso_cv.alpha_)
+
+regressor2.fit(Xtrain, ytrain)
+
+ypred2_train = regressor2.predict(Xtrain)
+ypred2_test = regressor2.predict(Xtest)
+
+print('Scores:', r2_score(ytrain,ypred2_train), r2_score(ytest,ypred2_test))
+
+L2 РЕГУЛЯРИЗАЦИЯ, РИДЖ
+
+for a in np.arange(-10,10.1,2.5):
+    regressor3 = Ridge(alpha=a)
+    regressor3.fit(Xtrain, ytrain)
+
+    ypred3 = regressor3.predict(Xtest)
+
+    print('alpha={}'.format(a))
+    print('Scores:',r2_score(ytest,ypred3), mean_squared_error(ytest,ypred3))
+    print(regressor3.coef_)
+
+n_alphas = 200
+ridge_alphas = np.logspace(-2, 6, n_alphas)
+
+ridge_cv = RidgeCV(alphas=ridge_alphas, 
+                   scoring='neg_mean_squared_error',
+                   cv=3)
+ridge_cv.fit(X, y)
+
+ridge_cv.alpha_
+
+regressor3 = Lasso(alpha=ridge_cv.alpha_)
+
+regressor3.fit(Xtrain, ytrain)
+
+ypred3_train = regressor3.predict(Xtrain)
+ypred3_test = regressor3.predict(Xtest)
+
+print('Scores:', r2_score(ytrain,ypred3_train), r2_score(ytest,ypred3_test))
+
+regr = ElasticNet(alpha=0.5, l1_ratio=0.5, random_state=0)
+regr.fit(X, y)
+ElasticNet(random_state=0.5)
+print(regr.coef_)
+print(regr.intercept_)
+print(regr.predict([[0, 0]]))
+
+regressor3.coef_
+
+coefficients = pd.concat([pd.DataFrame(X.columns),pd.DataFrame(np.transpose(regressor3.coef_))], axis = 1)
+coefficients
+
+len(data),len(Xtest)
+
+ЛОГИСТИЧЕСКАЯ РЕГРЕССИЯ
+
+model = LogisticRegression(solver='liblinear')
+model.fit(X_train, y_train)
+ypred_train = model.predict(X_train)
+ypred_test = model.predict(X_test)
+print(classification_report(ypred_train, y_train), classification_report(ypred_test, y_test))
+
+model = SVC(kernel='linear')
+model.fit(X_train, y_train)
+ypred_train = model.predict(X_train)
+ypred_test = model.predict(X_test)
+print(classification_report(ypred_train, y_train), classification_report(ypred_test, y_test))
+
+PIPELINE
+
+scaler = StandardScaler()
+pipe = Pipeline([('scaler', StandardScaler()), ('model', LogisticRegression(class_weight={}))))])
+pipe = make_pipeline(StandardScaler(), LogisticRegression())
+
+pipe.fit(X_train, y_train)
+ypred_train = pipe.predict(X_train)
+ypred_test = pipe.predict(X_test)
+print(classification_report(ypred_train, y_train), classification_report(ypred_test, y_test))
+
+
+ГРАФИКИ
+
+data_1 = pd.DataFrame(data=np.c_[data.drop(columns = 'target_column', axis = 1), data['target_column']],
+                     columns=list(data.drop(columns = 'target_column', axis = 1)) + ['target_column'])
+
+plt.figure(figsize=(9,12))
+
+corr = data_1.corr()
+
+g = sns.heatmap(corr,annot=True,linewidths=.5,fmt= '.2f',\
+            mask=np.zeros_like(corr, dtype=bool), \
+            cmap=sns.diverging_palette(200,300,as_cmap=True))
+
+g.set_xticklabels(g.get_xticklabels(), fontsize = 7)
+g.set_yticklabels(g.get_yticklabels(), rotation = 0, fontsize = 7)
+plt.show()
+
+sns.barplot(y='target_column', x='column', data = data)
+plt.show()
+
+for c in data_1.columns:
+    if c != 'target_column':
+        print(c)
+        sns.barplot(y='target_column', x=c, data = data)
+    plt.show()
+
+for c in data_1.columns:
+    if c != 'target_column':
+        print(c)
+        plt.scatter(data_1[c], data_1['target_column'],
+                    #c = 'm',
+                    #s = 3)
+        plt.show()
+
+
+cm = confusion_matrix(ypred_test, y_test)
+cm
+ConfusionMatrixDisplay(cm).plot()
